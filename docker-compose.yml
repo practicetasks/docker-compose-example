@@ -1,0 +1,13 @@
+services:
+  posts-service:
+    build: posts/.
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - USERS-URL=users-service
+
+  users-service:
+    build: users/.
+    ports:
+      - "9090:9090"
