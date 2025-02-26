@@ -2,28 +2,24 @@ package com.practice.microservices.controller;
 
 import com.practice.microservices.dto.UserDto;
 import com.practice.microservices.model.Post;
+import com.practice.microservices.repository.PostRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
+
 
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/posts")
 public class PostController {
-    private RestTemplate restTemplate = new RestTemplate();
+    private final RestTemplate restTemplate = new RestTemplate();
     @Value("${users-server-url}")
     private String usersUrl;
 
-    // HttpClient
-    // Unirest
-    // OkHttp
-    // WebClient
-
-    private final List<Post> posts = new ArrayList<>();
-    private int nextId = 1;
+    private final PostRepository postRepository;
 
     @PostMapping
     public Post create(@RequestBody Post post) {
@@ -34,18 +30,16 @@ public class PostController {
         UserDto user = restTemplate.getForObject(usersUrl + "/" + post.getAuthorId(), UserDto.class);
         System.out.println(user);
 
-        post.setId(nextId++);
         post.setCreated(LocalDateTime.now());
-        posts.add(post);
-        return post;
+        return postRepository.save(post);
     }
+
+    // REST
+    // - Stateless
 
     @GetMapping("/{id}")
     public Post findById(@PathVariable int id) {
-        return posts.stream()
-                .filter(post -> post.getId() == id)
-                .findFirst()
-                .orElseThrow();
+        return postRepository.findById(id).orElseThrow();
     }
 
     // Стримы

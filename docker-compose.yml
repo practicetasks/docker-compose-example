@@ -6,8 +6,31 @@ services:
     environment:
       - SPRING_PROFILES_ACTIVE=docker
       - USERS-URL=users-service
+      - DB_HOST=postgres-service
+      - DB_NAME=social-network
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    depends_on:
+      - postgres-service
+      - users-service
 
   users-service:
     build: users/.
     ports:
       - "9090:9090"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - DB_HOST=postgres-service
+      - DB_NAME=social-network
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    depends_on:
+      - postgres-service
+
+  postgres-service:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=social-network
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+
