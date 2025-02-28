@@ -1,6 +1,8 @@
 package com.practice.microservices.client;
 
 import com.practice.microservices.dto.PostDto;
+import com.practice.microservices.dto.UserDto;
+import com.practice.microservices.exception.ErrorResponse;
 import com.practice.microservices.model.Post;
 import com.practice.microservices.repository.PostRepository;
 import lombok.RequiredArgsConstructor;
@@ -8,20 +10,23 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
 
 @Component
 @RequiredArgsConstructor
-public class PostClient extends BaseClient {
+public class PostClient {
     @Value("${users-server-url}")
     private String usersUrl;
+    protected final RestTemplate rest = new RestTemplate();
 
     private final PostRepository postRepository;
 
     public ResponseEntity<Object> create(Post post) {
-        ResponseEntity<Object> responseEntity = get(usersUrl + "/" + post.getAuthorId());
-        if (responseEntity.getStatusCode().is2xxSuccessful()) {
+        try {
+            UserDto user = rest.getForObject(usersUrl + "/" + post.getAuthorId(), UserDto.class);
             post.setCreated(LocalDateTime.now());
             postRepository.save(post);
 
@@ -29,9 +34,13 @@ public class PostClient extends BaseClient {
             postDto.setId(post.getId());
             postDto.setDescription(post.getDescription());
             postDto.setCreated(post.getCreated());
+            postDto.setAuthor(user);
+
             return new ResponseEntity<>(post, HttpStatus.CREATED);
+        } catch (HttpClientErrorException e) {
+            ErrorResponse errorResponse = e.getResponseBodyAs(ErrorResponse.class);
+            return new ResponseEntity<>(errorResponse, e.getStatusCode());
         }
-        return responseEntity;
     }
 
     public Post findById(int postId) {
